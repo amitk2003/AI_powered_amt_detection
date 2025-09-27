@@ -33,7 +33,12 @@ The system follows a **3-stage workflow**:
 
 ---
 
+
 ## 🏗️ Architecture
+
+The pipeline is designed in **4 stages**, with additional **AI-powered validation using Google Gemini**:
+
+```json
 {
   "step1_ocr_extraction": {
     "raw_tokens": ["99.99", "8.50", "108.49"],
@@ -57,7 +62,14 @@ The system follows a **3-stage workflow**:
     "confidence": 0.90,
     "error": null
   },
-  "step4_final_output": {
+  "step4_ai_validation": {
+    "model": "Google Gemini",
+    "purpose": "Cross-check OCR results and validate noisy/handwritten/blurred inputs",
+    "status": "validated",
+    "ai_confidence": 0.92,
+    "error": null
+  },
+  "step5_final_output": {
     "currency": "USD",
     "amounts": [
       {"type": "subtotal", "value": 99.99, "source": "text: 'Subtotal: 99.99'"},
