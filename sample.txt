@@ -1,0 +1,179 @@
+Test Case 1: Clean Text Input with INR
+Description: Tests clean text input with INR currency.
+Input: Total: INR 1200 | Paid: 1000 | Due: 200 | Discount: 10%
+Expected Output:
+{
+  "step1_ocr_extraction": {
+    "raw_tokens": ["1200", "1000", "200", "10%"],
+    "currency_hint": "INR",
+    "confidence": 0.74,
+    "raw_text": "Total: INR 1200 | Paid: 1000 | Due: 200 | Discount: 10%",
+    "error": null
+  },
+  "step2_normalization": {
+    "normalized_amounts": [1200, 1000, 200, 10],
+    "normalization_confidence": 0.82,
+    "cleaned_text": "Total: INR 1200 | Paid: 1000 | Due: 200 | Discount: 10%",
+    "error": null
+  },
+  "step3_classification": {
+    "amounts": [
+      {"type": "total_bill", "value": 1200, "source": "text: 'Total: INR 1200'"},
+      {"type": "paid", "value": 1000, "source": "text: 'Paid: 1000'"},
+      {"type": "due", "value": 200, "source": "text: 'Due: 200'"},
+      {"type": "extra", "value": 10, "source": "text: 'Discount: 10%'"}
+    ],
+    "confidence": 0.80,
+    "error": null
+  },
+  "step4_final_output": {
+    "currency": "INR",
+    "amounts": [
+      {"type": "total_bill", "value": 1200, "source": "text: 'Total: INR 1200'"},
+      {"type": "paid", "value": 1000, "source": "text: 'Paid: 1000'"},
+      {"type": "due", "value": 200, "source": "text: 'Due: 200'"},
+      {"type": "extra", "value": 10, "source": "text: 'Discount: 10%'"}
+    ],
+    "status": "ok",
+    "error_reason": null
+  }
+}
+Command: curl -X POST -d "text=Total: INR 1200 | Paid: 1000 | Due: 200 | Discount: 10%" http://localhost:3000/endpoint
+
+---
+
+Test Case 2: Noisy OCR-like Input with Rs
+Description: Simulates OCR output with errors to test error correction.
+Input: T0tal: Rs l200 | Pald: 1000 | Due: 200
+Expected Output:
+{
+  "step1_ocr_extraction": {
+    "raw_tokens": ["l200", "1000", "200"],
+    "currency_hint": "Rs",
+    "confidence": 0.74,
+    "raw_text": "T0tal: Rs l200 | Pald: 1000 | Due: 200",
+    "error": null
+  },
+  "step2_normalization": {
+    "normalized_amounts": [1200, 1000, 200],
+    "normalization_confidence": 0.82,
+    "cleaned_text": "Total: Rs 1200 | Paid: 1000 | Due: 200",
+    "error": null
+  },
+  "step3_classification": {
+    "amounts": [
+      {"type": "total_bill", "value": 1200, "source": "text: 'T0tal: Rs l200'"},
+      {"type": "paid", "value": 1000, "source": "text: 'Pald: 1000'"},
+      {"type": "due", "value": 200, "source": "text: 'Due: 200'"}
+    ],
+    "confidence": 0.80,
+    "error": null
+  },
+  "step4_final_output": {
+    "currency": "Rs",
+    "amounts": [
+      {"type": "total_bill", "value": 1200, "source": "text: 'T0tal: Rs l200'"},
+      {"type": "paid", "value": 1000, "source": "text: 'Pald: 1000'"},
+      {"type": "due", "value": 200, "source": "text: 'Due: 200'"}
+    ],
+    "status": "ok",
+    "error_reason": null
+  }
+}
+Command: curl -X POST -d "text=T0tal: Rs l200 | Pald: 1000 | Due: 200" http://localhost:3000/endpoint
+
+---
+
+Test Case 3: Different Currency (USD)
+Description: Tests handling of USD currency.
+Input: Total: $1500 | Paid: 1200 | Tax: 15%
+Expected Output:
+{
+  "step1_ocr_extraction": {
+    "raw_tokens": ["1500", "1200", "15%"],
+    "currency_hint": "$",
+    "confidence": 0.74,
+    "raw_text": "Total: $1500 | Paid: 1200 | Tax: 15%",
+    "error": null
+  },
+  "step2_normalization": {
+    "normalized_amounts": [1500, 1200, 15],
+    "normalization_confidence": 0.82,
+    "cleaned_text": "Total: $1500 | Paid: 1200 | Tax: 15%",
+    "error": null
+  },
+  "step3_classification": {
+    "amounts": [
+      {"type": "total_bill", "value": 1500, "source": "text: 'Total: $1500'"},
+      {"type": "paid", "value": 1200, "source": "text: 'Paid: 1200'"},
+      {"type": "extra", "value": 15, "source": "text: 'Tax: 15%'"}
+    ],
+    "confidence": 0.80,
+    "error": null
+  },
+  "step4_final_output": {
+    "currency": "$",
+    "amounts": [
+      {"type": "total_bill", "value": 1500, "source": "text: 'Total: $1500'"},
+      {"type": "paid", "value": 1200, "source": "text: 'Paid: 1200'"},
+      {"type": "extra", "value": 15, "source": "text: 'Tax: 15%'"}
+    ],
+    "status": "ok",
+    "error_reason": null
+  }
+}
+Command: curl -X POST -d "text=Total: $1500 | Paid: 1200 | Tax: 15%" http://localhost:3000/endpoint
+
+---
+
+Test Case 4: Noisy Document (Triggers Guardrail)
+Description: Tests guardrail condition for noisy input with no valid amounts.
+Input: abc xyz @#$
+Expected Output:
+{
+  "status": "no_amounts_found",
+  "reason": "document too noisy"
+}
+Command: curl -X POST -d "text=abc xyz @#$" http://localhost:3000/endpoint
+
+---
+
+Test Case 5: Multiple Currencies (Edge Case)
+Description: Tests handling of multiple currencies.
+Input: Total: $1500 | Paid: INR 1200 | Due: 300
+Expected Output:
+{
+  "step1_ocr_extraction": {
+    "raw_tokens": ["1500", "1200", "300"],
+    "currency_hint": "$",
+    "confidence": 0.74,
+    "raw_text": "Total: $1500 | Paid: INR 1200 | Due: 300",
+    "error": null
+  },
+  "step2_normalization": {
+    "normalized_amounts": [1500, 1200, 300],
+    "normalization_confidence": 0.82,
+    "cleaned_text": "Total: $1500 | Paid: INR 1200 | Due: 300",
+    "error": null
+  },
+  "step3_classification": {
+    "amounts": [
+      {"type": "total_bill", "value": 1500, "source": "text: 'Total: $1500'"},
+      {"type": "paid", "value": 1200, "source": "text: 'Paid: INR 1200'"},
+      {"type": "due", "value": 300, "source": "text: 'Due: 300'"}
+    ],
+    "confidence": 0.80,
+    "error": null
+  },
+  "step4_final_output": {
+    "currency": "$",
+    "amounts": [
+      {"type": "total_bill", "value": 1500, "source": "text: 'Total: $1500'"},
+      {"type": "paid", "value": 1200, "source": "text: 'Paid: INR 1200'"},
+      {"type": "due", "value": 300, "source": "text: 'Due: 300'"}
+    ],
+    "status": "ok",
+    "error_reason": "Multiple currencies detected, selected first: $"
+  }
+}
+Command: curl -X POST -d "text=Total: $1500 | Paid: INR 1200 | Due: 300" http://localhost:3000/endpoint
