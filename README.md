@@ -34,4 +34,37 @@ The system follows a **3-stage workflow**:
 ---
 
 ## 🏗️ Architecture
-
+{
+  "step1_ocr_extraction": {
+    "raw_tokens": ["99.99", "8.50", "108.49"],
+    "currency_hint": "USD",
+    "confidence": 0.85,
+    "raw_text": "Subtotal: 99.99 Tax: 8.50 Total: 108.49",
+    "error": null
+  },
+  "step2_normalization": {
+    "normalized_amounts": [99.99, 8.50, 108.49],
+    "normalization_confidence": 0.95,
+    "cleaned_text": "Subtotal: 99.99 Tax: 8.50 Total: 108.49",
+    "error": null
+  },
+  "step3_classification": {
+    "amounts": [
+      {"type": "subtotal", "value": 99.99},
+      {"type": "tax", "value": 8.50},
+      {"type": "total_bill", "value": 108.49}
+    ],
+    "confidence": 0.90,
+    "error": null
+  },
+  "step4_final_output": {
+    "currency": "USD",
+    "amounts": [
+      {"type": "subtotal", "value": 99.99, "source": "text: 'Subtotal: 99.99'"},
+      {"type": "tax", "value": 8.50, "source": "text: 'Tax: 8.50'"},
+      {"type": "total_bill", "value": 108.49, "source": "text: 'Total: 108.49'"}
+    ],
+    "status": "ok",
+    "error_reason": null
+  }
+}
